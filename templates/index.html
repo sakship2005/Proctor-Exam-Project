@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Exam Proctor System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root{ --primary:#5b3cc4; --primary-dark:#4a2db1; --accent:#00c389; --bg:#f6f7fb; }
+    body{ background:var(--bg); min-height:100vh; }
+    .hero{ max-width:880px; margin:auto; text-align:center; padding:80px 20px; }
+    .hero-card{ background:#fff; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,.06); padding:32px; }
+    .brand{ font-weight:800; letter-spacing:.3px; }
+    .btn-rounded{ border-radius:12px; }
+  </style>
+  </head>
+<body>
+  <nav class="navbar navbar-light bg-white shadow-sm">
+    <div class="container">
+      <span class="navbar-brand mb-0 h1 brand">Exam Proctor</span>
+      <a href="/admin/login" class="btn btn-outline-primary btn-sm btn-rounded">Admin</a>
+    </div>
+  </nav>
+  <div class="container hero">
+    <div class="hero-card">
+      <h1 class="mb-2 brand">Welcome to Exam Proctor</h1>
+      <p class="text-muted mb-4">Secure online assessments for students and teachers</p>
+      <div class="row g-3 justify-content-center">
+        <div class="col-12 col-md-4">
+          <a href="/student/login" class="btn btn-primary w-100 btn-lg btn-rounded">Student Login</a>
+        </div>
+        <div class="col-12 col-md-4">
+          <a href="/teacher/login" class="btn btn-success w-100 btn-lg btn-rounded">Teacher Login</a>
+        </div>
+        <div class="col-12 col-md-4">
+          <a href="/admin/login" class="btn btn-outline-secondary w-100 btn-lg btn-rounded">Admin Login</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
