@@ -1,0 +1,176 @@
+<!-- templates/admin_dashboard.html -->
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Admin Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root{ --primary:#5b3cc4; --primary-dark:#4a2db1; --bg:#f6f7fb; }
+    body{ min-height:100vh; background:var(--bg); }
+    .app-shell{ display:flex; }
+    .sidebar{ width:240px; background:linear-gradient(180deg, var(--primary), var(--primary-dark)); color:#fff; }
+    .sidebar a{ color:#fff; text-decoration:none; border-radius:10px; padding:10px 12px; display:block; }
+    .sidebar a:hover{ background:rgba(255,255,255,.12); }
+    .brand{ font-weight:700; letter-spacing:.3px; }
+    .content{ margin-left:260px; padding:24px; }
+    .section-card{ background:#fff; border-radius:14px; box-shadow:0 6px 20px rgba(0,0,0,.05); padding:16px; }
+    pre { background:#f8f9fa; padding:10px; border-radius:10px; max-height:400px; overflow:auto; }
+    .btn-rounded{ border-radius:10px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-light bg-white shadow-sm">
+    <div class="container-fluid">
+      <span class="navbar-brand mb-0 h1 brand">Admin Dashboard</span>
+      <div>
+        <a href="/admin/logout" class="btn btn-outline-secondary">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="app-shell">
+    <div class="sidebar vh-100 p-3 position-fixed">
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <div class="rounded-circle bg-white text-dark d-flex align-items-center justify-content-center" style="width:34px;height:34px;font-weight:700;">A</div>
+        <div class="fw-semibold">TCOMP</div>
+      </div>
+      <div class="small text-white-50 mb-2">Menu</div>
+      <ul class="list-unstyled d-grid gap-1">
+        <li><a href="#" onclick="showCreate()">🧑‍💻 Create New User</a></li>
+        <li><a href="#" onclick="showStudents()">🎓 Student List</a></li>
+        <li><a href="#" onclick="showTeachers()">👩‍🏫 Teacher List</a></li>
+        <li><a href="#" onclick="showLogs()">🗒️ Exam Logs</a></li>
+      </ul>
+    </div>
+
+    <div class="content">
+      <div id="panel-create" class="section-card" style="display:none;">
+        <h4 class="mb-3">Create new user</h4>
+        <form id="create-form" onsubmit="return createUser();">
+          <div class="row g-2">
+            <div class="col-md-4">
+              <input id="new-username" class="form-control" placeholder="username" required>
+            </div>
+            <div class="col-md-4">
+              <input id="new-password" type="password" class="form-control" placeholder="password" required>
+            </div>
+            <div class="col-md-2">
+              <select id="new-role" class="form-select">
+                <option value="student">Student</option>
+                <option value="teacher">Teacher</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <button class="btn btn-success w-100 btn-rounded">Create</button>
+            </div>
+          </div>
+        </form>
+        <div id="create-result" class="mt-3"></div>
+      </div>
+
+      <div id="panel-students" class="section-card" style="display:none;">
+        <h4 class="mb-3">Students</h4>
+        <div id="students-list">Loading...</div>
+      </div>
+
+      <div id="panel-teachers" class="section-card" style="display:none;">
+        <h4 class="mb-3">Teachers</h4>
+        <div id="teachers-list">Loading...</div>
+      </div>
+
+      <div id="panel-logs" class="section-card" style="display:none;">
+        <h4 class="mb-3">Exam Logs</h4>
+        <div class="mb-2">
+          <input id="filter-event" class="form-control" placeholder="filter event_type (optional)">
+        </div>
+        <button class="btn btn-primary mb-3 btn-rounded" onclick="loadLogs()">Load logs</button>
+        <div id="logs-area"><pre id="logs-pre">No logs loaded</pre></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+async function api(path, opts){
+  opts = opts || {};
+  opts.headers = opts.headers || {'Accept':'application/json'};
+  if(opts.body && typeof opts.body !== 'string'){
+    opts.body = new URLSearchParams(opts.body);
+  }
+  const r = await fetch(path, opts);
+  try { return await r.json(); } catch(e){ return {ok:false, text: await r.text()}; }
+}
+
+function hideAll(){
+  document.getElementById('panel-create').style.display='none';
+  document.getElementById('panel-students').style.display='none';
+  document.getElementById('panel-teachers').style.display='none';
+  document.getElementById('panel-logs').style.display='none';
+}
+
+function showCreate(){ hideAll(); document.getElementById('panel-create').style.display='block'; }
+function showStudents(){ hideAll(); document.getElementById('panel-students').style.display='block'; loadStudents(); }
+function showTeachers(){ hideAll(); document.getElementById('panel-teachers').style.display='block'; loadTeachers(); }
+function showLogs(){ hideAll(); document.getElementById('panel-logs').style.display='block'; }
+
+async function createUser(){
+  const username = document.getElementById('new-username').value.trim();
+  const password = document.getElementById('new-password').value.trim();
+  const role = document.getElementById('new-role').value;
+  if(!username||!password) return false;
+  const res = await api('/api/admin/create_user',{method:'POST', body: {username, password, role}});
+  if(res.ok){
+    document.getElementById('create-result').innerHTML = '<div class="alert alert-success">Created '+res.user.username+'</div>';
+    document.getElementById('new-username').value=''; document.getElementById('new-password').value='';
+  } else {
+    document.getElementById('create-result').innerHTML = '<div class="alert alert-danger">Error: '+(res.msg||res.error||JSON.stringify(res))+'</div>';
+  }
+  return false;
+}
+
+async function loadStudents(){
+  const res = await api('/api/admin/students');
+  if(res.ok){
+    const el = document.getElementById('students-list');
+    if(res.students.length===0) el.innerHTML = '<div class="text-muted">No students</div>';
+    else {
+      let html = '<table class="table table-sm"><thead><tr><th>ID</th><th>Username</th><th>Created</th></tr></thead><tbody>';
+      res.students.forEach(s=> html += `<tr><td>${s.id}</td><td>${s.username}</td><td>${s.created_at}</td></tr>`);
+      html += '</tbody></table>';
+      el.innerHTML = html;
+    }
+  } else {
+    document.getElementById('students-list').innerText = 'Error fetching';
+  }
+}
+
+async function loadTeachers(){
+  const res = await api('/api/admin/teachers');
+  if(res.ok){
+    const el = document.getElementById('teachers-list');
+    if(res.teachers.length===0) el.innerHTML = '<div class="text-muted">No teachers</div>';
+    else {
+      let html = '<table class="table table-sm"><thead><tr><th>ID</th><th>Username</th><th>Created</th></tr></thead><tbody>';
+      res.teachers.forEach(s=> html += `<tr><td>${s.id}</td><td>${s.username}</td><td>${s.created_at}</td></tr>`);
+      html += '</tbody></table>';
+      el.innerHTML = html;
+    }
+  } else {
+    document.getElementById('teachers-list').innerText = 'Error fetching';
+  }
+}
+
+async function loadLogs(){
+  const filter = document.getElementById('filter-event').value.trim();
+  const url = '/api/admin/logs' + (filter?('?event_type='+encodeURIComponent(filter)): '');
+  const res = await api(url);
+  if(res.ok){
+    document.getElementById('logs-pre').innerText = JSON.stringify(res.logs, null, 2);
+  } else {
+    document.getElementById('logs-pre').innerText = 'Error loading logs';
+  }
+}
+
+</script>
+</body>
+</html>

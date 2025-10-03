@@ -1,0 +1,414 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Teacher Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root{
+      --primary:#5b3cc4;
+      --primary-dark:#4a2db1;
+      --accent:#00c389;
+      --bg:#f6f7fb;
+    }
+    body { min-height:100vh; background:var(--bg); }
+    .app-shell { display:flex; }
+    .sidebar { width:240px; background:linear-gradient(180deg, var(--primary), var(--primary-dark)); color:#fff; }
+    .sidebar a{ color:#fff; text-decoration:none; border-radius:10px; padding:10px 12px; display:block; }
+    .sidebar a:hover{ background:rgba(255,255,255,0.12); }
+    .brand{ font-weight:700; letter-spacing:.3px; }
+    .content { margin-left:260px; padding:24px; }
+    .section-card{ background:#fff; border-radius:14px; box-shadow:0 6px 20px rgba(0,0,0,.05); padding:16px; }
+    .table-sm th, .table-sm td { vertical-align:middle; }
+    .alert-small { padding: 0.25rem 0.5rem; font-size: 0.85rem; }
+    .btn-rounded{ border-radius:10px; }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-light bg-white shadow-sm">
+    <div class="container-fluid">
+      <span class="navbar-brand mb-0 h1 brand">Teacher Dashboard</span>
+      <div>
+        <a href="/teacher/logout" class="btn btn-outline-secondary">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="app-shell">
+    <!-- Sidebar -->
+    <div class="sidebar vh-100 p-3 position-fixed">
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <div class="rounded-circle bg-white text-dark d-flex align-items-center justify-content-center" style="width:34px;height:34px;font-weight:700;">T</div>
+        <div class="fw-semibold">TCOMP</div>
+      </div>
+      <div class="small text-white-50 mb-2">Menu</div>
+      <ul class="list-unstyled d-grid gap-1">
+        <li><a href="#" onclick="showCreateExam()">➕ Create Exam</a></li>
+        <li><a href="#" onclick="showMyExams()">📚 My Exams</a></li>
+        <li><a href="#" onclick="showMarks()">🧮 Student Marks</a></li>
+        <li><a href="#" onclick="showCheating()">🚨 Cheating Logs</a></li>
+      </ul>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+      <!-- Create Exam -->
+      <div id="panel-create-exam" class="section-card" style="display:none;">
+        <h4 class="mb-3">Create New Exam</h4>
+        <form id="exam-form" onsubmit="return createExam();">
+          <div class="row mb-3 g-2">
+            <div class="col-md-6">
+              <input id="exam-title" class="form-control" placeholder="Exam Title" required>
+            </div>
+            <div class="col-md-3">
+              <input id="exam-duration" type="number" class="form-control" placeholder="Duration (min)" value="60" required>
+            </div>
+            <div class="col-md-3">
+              <button class="btn btn-success w-100 btn-rounded">Create</button>
+            </div>
+          </div>
+        </form>
+        <div id="exam-result"></div>
+      </div>
+
+      <!-- My Exams -->
+      <div id="panel-my-exams" class="section-card" style="display:none;">
+        <h4 class="mb-3">My Exams</h4>
+        <div id="exams-list">Loading...</div>
+        <div class="mt-4">
+          <h5>Live Monitor</h5>
+          <button class="btn btn-sm btn-outline-primary mb-2 btn-rounded" onclick="openMonitor()">Open Live Monitor</button>
+          <div id="monitor" class="border bg-white p-2" style="height:200px; overflow:auto;"></div>
+        </div>
+      </div>
+
+      <!-- Question Paper -->
+      <div id="panel-questions" class="section-card" style="display:none;">
+        <h4 class="mb-3">Set Question Paper</h4>
+        <form id="question-form" onsubmit="return createQuestionSequential();">
+          <input type="hidden" id="q-exam-id">
+          <div class="mb-2"><input id="q-text" class="form-control" placeholder="Question" required></div>
+          <div class="row mb-2 g-2">
+            <div class="col"><input id="q-a" class="form-control" placeholder="Option A" required></div>
+            <div class="col"><input id="q-b" class="form-control" placeholder="Option B" required></div>
+          </div>
+          <div class="row mb-2 g-2">
+            <div class="col"><input id="q-c" class="form-control" placeholder="Option C" required></div>
+            <div class="col"><input id="q-d" class="form-control" placeholder="Option D" required></div>
+          </div>
+          <div class="row mb-2 g-2">
+            <div class="col"><select id="q-correct" class="form-select">
+              <option value="A">Correct: A</option>
+              <option value="B">Correct: B</option>
+              <option value="C">Correct: C</option>
+              <option value="D">Correct: D</option>
+            </select></div>
+            <div class="col"><input id="q-points" class="form-control" placeholder="Points" type="number" value="1" min="0"></div>
+            <div class="col"><input id="q-time" class="form-control" placeholder="Time(sec)" type="number" value="60" min="1"></div>
+            <div class="col d-flex gap-2">
+              <button class="btn btn-primary w-100 btn-rounded" type="submit">Save & Next</button>
+              <button type="button" class="btn btn-success w-100 btn-rounded" onclick="finishQuestionPaper()">Finish</button>
+            </div>
+          </div>
+        </form>
+        <div id="questions-list" class="mt-3"></div>
+      </div>
+
+      <!-- Student Marks -->
+      <div id="panel-marks" class="section-card" style="display:none;">
+        <h4 class="mb-3">Student Marks</h4>
+        <div id="marks-exams-list">Loading...</div>
+        <div id="marks-area" class="mt-3"></div>
+      </div>
+
+      <!-- Cheating Logs -->
+      <div id="panel-cheating" class="section-card" style="display:none;">
+        <h4 class="mb-3">Cheating Logs</h4>
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <label for="cheat-limit" class="form-label mb-0">Limit</label>
+          <input id="cheat-limit" type="number" class="form-control" style="width:120px" value="200">
+          <button class="btn btn-sm btn-primary btn-rounded" onclick="loadCheatingLogs()">Refresh</button>
+        </div>
+        <div id="cheating-list">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+async function api(path, opts){
+  opts = opts || {};
+  opts.headers = opts.headers || {'Accept':'application/json'};
+  if(opts.body && typeof opts.body !== 'string'){
+    opts.body = new URLSearchParams(opts.body);
+  }
+  try {
+    const r = await fetch(path, opts);
+    // read the body once as text, then try to parse JSON from it.
+    const txt = await r.text();
+    try {
+      return JSON.parse(txt);
+    } catch(e){
+      return {ok:false, status: r.status, text: txt};
+    }
+  } catch(e){
+    return {ok:false, error:e.message};
+  }
+}
+
+async function updateSchedule(exam_id){
+  const duration = document.getElementById('dur-'+exam_id).value;
+  const start_at = document.getElementById('start-'+exam_id).value.trim();
+  const res = await api('/api/teacher/update_exam', {
+    method: 'POST',
+    body: { exam_id, duration, start_at }
+  });
+  if(res.ok){
+    alert('Schedule updated');
+    loadExams();
+  } else {
+    alert('Error: '+JSON.stringify(res));
+  }
+}
+
+let monitorSource = null;
+function openMonitor(){
+  const el = document.getElementById('monitor');
+  if(monitorSource){ return; }
+  monitorSource = new EventSource('/api/teacher/monitor_stream');
+  monitorSource.onmessage = (e)=>{
+    try{
+      const data = JSON.parse(e.data);
+      const ts = new Date().toLocaleTimeString();
+      el.innerHTML += `<div>[${ts}] ${data.type} | student=${data.student_username||data.student_id} | exam=${data.exam_id||''} | details=${JSON.stringify(data.meta||{marks:data.marks, cheating_count:data.cheating_count})}</div>`;
+      el.scrollTop = el.scrollHeight;
+    }catch(err){
+      console.error('monitor parse', err);
+    }
+  };
+  monitorSource.onerror = ()=>{
+    el.innerHTML += '<div class="text-danger">Stream error or disconnected</div>';
+  };
+}
+
+// ===== Cheating Logs JS =====
+async function loadCheatingLogs(){
+  const el = document.getElementById('cheating-list');
+  el.textContent = 'Loading...';
+  const limit = Number(document.getElementById('cheat-limit').value || 200);
+  const res = await api('/api/teacher/cheating_logs?limit='+encodeURIComponent(limit));
+  if(!res.ok){ el.innerHTML = '<div class="text-danger">Unable to load cheating logs</div>'; return; }
+  if(!res.logs || res.logs.length===0){ el.innerHTML = '<div class="text-muted">No cheating incidents found.</div>'; return; }
+  let html = '<table class="table table-sm table-bordered"><thead><tr><th>Time</th><th>Exam</th><th>Student</th><th>Cheating Count</th></tr></thead><tbody>';
+  res.logs.forEach(l=>{
+    html += `<tr>
+      <td>${l.created_at}</td>
+      <td>${l.exam_title} (ID ${l.exam_id})</td>
+      <td>${l.student_username||l.student_id}</td>
+      <td>${l.cheating_count||0}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+function hideAll(){
+  document.getElementById('panel-create-exam').style.display='none';
+  document.getElementById('panel-my-exams').style.display='none';
+  document.getElementById('panel-questions').style.display='none';
+  document.getElementById('panel-marks').style.display='none';
+  const cheat = document.getElementById('panel-cheating'); if(cheat) cheat.style.display='none';
+}
+
+function showCreateExam(){ hideAll(); document.getElementById('panel-create-exam').style.display='block'; }
+function showMyExams(){ hideAll(); document.getElementById('panel-my-exams').style.display='block'; loadExams(); }
+function showMarks(){ hideAll(); document.getElementById('panel-marks').style.display='block'; loadExamsForMarks(); }
+function showCheating(){ hideAll(); document.getElementById('panel-cheating').style.display='block'; loadCheatingLogs(); }
+
+async function createExam(){
+  const title = document.getElementById('exam-title').value.trim();
+  const duration = Number(document.getElementById('exam-duration').value);
+  const res = await api('/api/teacher/create_exam',{method:'POST', body: {title, duration}});
+  const resultEl = document.getElementById('exam-result');
+  if(res.ok){
+    resultEl.innerHTML = '<div class="alert alert-success alert-small">Created "'+res.exam.title+'"</div>';
+    document.getElementById('exam-form').reset();
+  } else {
+    resultEl.innerHTML = '<div class="alert alert-danger alert-small">Error: '+JSON.stringify(res)+'</div>';
+  }
+  return false;
+}
+
+async function loadExams(){
+  const res = await api('/api/teacher/exams');
+  const el = document.getElementById('exams-list');
+  if(res.ok){
+    if(res.exams.length===0) el.innerHTML = '<div class="text-muted">No exams yet.</div>';
+    else {
+      let html = '<table class="table table-sm table-bordered"><thead><tr><th>ID</th><th>Title</th><th>Duration</th><th>Start (ISO)</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+      res.exams.forEach(e=> {
+        const statusBadge = e.is_published ? 
+          '<span class="badge bg-success">Published</span>' : 
+          '<span class="badge bg-warning">Draft</span>';
+        const publishBtn = e.is_published ? 
+          `<button class="btn btn-sm btn-warning me-1" onclick="togglePublish(${e.id}, false)">Unpublish</button>` :
+          `<button class="btn btn-sm btn-success me-1" onclick="togglePublish(${e.id}, true)">Publish</button>`;
+        
+        html += `<tr>
+          <td>${e.id}</td>
+          <td>${e.title}</td>
+          <td><input id="dur-${e.id}" type="number" class="form-control form-control-sm" value="${e.duration}" min="1" style="width:90px"></td>
+          <td><input id="start-${e.id}" type="text" class="form-control form-control-sm" placeholder="YYYY-MM-DDTHH:MM" value="${e.start_at||''}" style="width:200px"></td>
+          <td>${statusBadge}</td>
+          <td>
+            ${publishBtn}
+            <button class="btn btn-sm btn-secondary me-1" onclick="openQuestions(${e.id})">Questions</button>
+            <button class="btn btn-sm btn-info me-1" onclick="viewMarksForExam(${e.id})">Marks</button>
+            <button class="btn btn-sm btn-primary" onclick="updateSchedule(${e.id})">Update Schedule</button>
+          </td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      el.innerHTML = html;
+    }
+  } else {
+    el.innerHTML = '<div class="text-danger">Error loading exams</div>';
+  }
+}
+
+function openQuestions(exam_id){
+  hideAll();
+  document.getElementById('panel-questions').style.display='block';
+  document.getElementById('q-exam-id').value = exam_id;
+  loadQuestions(exam_id);
+}
+
+async function createQuestionSequential(){
+  const exam_id = document.getElementById('q-exam-id').value;
+  const text = document.getElementById('q-text').value.trim();
+  const option_a = document.getElementById('q-a').value.trim();
+  const option_b = document.getElementById('q-b').value.trim();
+  const option_c = document.getElementById('q-c').value.trim();
+  const option_d = document.getElementById('q-d').value.trim();
+  const correct_option = document.getElementById('q-correct').value;
+  const points = Number(document.getElementById('q-points').value);
+  const time_seconds = Number(document.getElementById('q-time').value);
+
+  const res = await api('/api/teacher/create_question', {
+    method:'POST',
+    body: {exam_id, text, option_a, option_b, option_c, option_d, correct_option, points, time_seconds}
+  });
+
+  if(res.ok){
+    document.getElementById('question-form').reset();
+    document.getElementById('q-exam-id').value = exam_id;
+    loadQuestions(exam_id);
+    document.getElementById('q-text').focus();
+    alert('Question added successfully!');
+  } else {
+    alert("Error: "+JSON.stringify(res));
+  }
+  return false;
+}
+
+function finishQuestionPaper(){
+  alert("Question paper saved! You can set the start time later in My Exams.");
+  showMyExams();
+}
+
+async function loadQuestions(exam_id){
+  const res = await api('/api/teacher/questions?exam_id='+exam_id);
+  const el = document.getElementById('questions-list');
+  if(res.ok){
+    if(res.questions.length===0) el.innerHTML = '<div class="text-muted">No questions yet</div>';
+    else {
+      let html = '<table class="table table-sm table-bordered"><thead><tr><th>ID</th><th>Question</th><th>Options</th><th>Correct</th></tr></thead><tbody>';
+      res.questions.forEach(q=>{
+        html += `<tr>
+          <td>${q.id}</td>
+          <td>${q.text}</td>
+          <td>A: ${q.options.A}<br>B: ${q.options.B}<br>C: ${q.options.C}<br>D: ${q.options.D}</td>
+          <td>${q.correct}</td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      el.innerHTML = html;
+    }
+  } else {
+    el.innerHTML = '<div class="text-danger">Error loading questions</div>';
+  }
+}
+
+async function loadExamsForMarks(){
+  const res = await api('/api/teacher/exams_for_marks');
+  const el = document.getElementById('marks-exams-list');
+  const area = document.getElementById('marks-area');
+  area.innerHTML = '';
+  if(!res.ok){ el.innerHTML = '<div class="text-danger">Unable to load exams</div>'; return; }
+  if(res.exams.length===0) el.innerHTML = '<div class="text-muted">No exams</div>';
+  else {
+    let html = '<ul class="list-group">';
+    res.exams.forEach(e=> html += `<li class="list-group-item d-flex justify-content-between align-items-center">${e.title} <div><button class="btn btn-sm btn-primary me-2" onclick="viewMarksForExam(${e.id})">View Marks</button></div></li>`);
+    html += '</ul>';
+    el.innerHTML = html;
+  }
+}
+
+async function viewMarksForExam(exam_id){
+  const res = await api('/api/teacher/exam_marks?exam_id='+encodeURIComponent(exam_id));
+  const area = document.getElementById('marks-area');
+  if(!res.ok){ area.innerHTML = '<div class="alert alert-danger">Unable to load marks</div>'; return; }
+  let html = '<h5 class="mb-3">Marks for Exam ID '+exam_id+'</h5>';
+  html += '<div class="table-responsive">';
+  html += '<table class="table table-sm table-bordered align-middle"><thead><tr><th style="width:120px;">Student ID</th><th>Username</th><th style="width:160px;">Marks</th><th>Graded At</th><th style="width:140px;">Action</th></tr></thead><tbody>';
+  res.marks.forEach(m=> html += `
+    <tr>
+      <td>${m.student_id}</td>
+      <td>${m.student_username||''}</td>
+      <td>
+        <input type="number" step="0.01" class="form-control form-control-sm" id="mark-${exam_id}-${m.student_id}" value="${m.marks==null?'':m.marks}">
+      </td>
+      <td>${m.graded_at||''}</td>
+      <td>
+        <button class="btn btn-sm btn-success btn-rounded" onclick="saveMark(${exam_id}, ${m.student_id})">Save</button>
+      </td>
+    </tr>`);
+  html += '</tbody></table></div>';
+  html += `<button class="btn btn-sm btn-secondary btn-rounded" onclick="downloadCSV(${exam_id})">Download CSV</button>`;
+  area.innerHTML = html;
+}
+
+function downloadCSV(exam_id){
+  window.location = '/api/teacher/exam_marks_csv?exam_id='+exam_id;
+}
+
+async function saveMark(exam_id, student_id){
+  const inp = document.getElementById(`mark-${exam_id}-${student_id}`);
+  const marks = inp.value;
+  const res = await api('/api/teacher/set_mark', { method:'POST', body: { exam_id, student_id, marks } });
+  if(res.ok){
+    inp.classList.add('is-valid');
+    setTimeout(()=> inp.classList.remove('is-valid'), 1200);
+    // reload the table to refresh graded_at
+    viewMarksForExam(exam_id);
+  } else {
+    alert('Error: '+ (res.msg || JSON.stringify(res)));
+  }
+}
+
+async function togglePublish(exam_id, publish){
+  const res = await api('/api/teacher/update_exam', {
+    method: 'POST',
+    body: { exam_id: exam_id, is_published: publish }
+  });
+  
+  if(res.ok){
+    alert(publish ? 'Exam published successfully!' : 'Exam unpublished successfully!');
+    loadExams(); // Refresh the list
+  } else {
+    alert('Error: ' + JSON.stringify(res));
+  }
+}
+</script>
+</body>
+</html>
